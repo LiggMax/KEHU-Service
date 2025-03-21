@@ -11,8 +11,8 @@ public interface VideoMapper {
     /**
      * 保存视频信息
      */
-    @Insert("INSERT INTO videos (title, description, file_path, cover_url, user_id, view_count, create_time, update_time) " +
-            "VALUES (#{title}, #{description}, #{filePath}, #{coverUrl}, #{userId}, #{viewCount}, #{createTime}, #{updateTime})")
+    @Insert("INSERT INTO videos (title, description, file_path, cover_url, video_img, user_id, view_count, create_time, update_time) " +
+            "VALUES (#{title}, #{description}, #{filePath}, #{coverUrl}, #{videoImg}, #{userId}, #{viewCount}, #{createTime}, #{updateTime})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void saveVideo(Video video);
     
@@ -43,7 +43,7 @@ public interface VideoMapper {
     /**
      * 更新视频信息
      */
-    @Update("UPDATE videos SET title = #{title}, description = #{description}, update_time = #{updateTime} WHERE id = #{id}")
+    @Update("UPDATE videos SET title = #{title}, description = #{description}, video_img = #{videoImg}, update_time = #{updateTime} WHERE id = #{id}")
     int updateVideo(Video video);
     
     /**

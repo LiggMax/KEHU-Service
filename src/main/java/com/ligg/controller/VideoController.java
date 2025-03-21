@@ -33,6 +33,7 @@ public class VideoController {
             @RequestParam("title") String title,
             @RequestParam("description") String description,
             @RequestParam("videoFile") MultipartFile videoFile,
+            @RequestParam(value = "coverFile", required = false) MultipartFile coverFile,
             HttpSession session) {
         // 获取当前登录用户
         User loginUser = (User) session.getAttribute("loginUser");
@@ -42,7 +43,7 @@ public class VideoController {
 
         try {
             // 调用服务层保存视频
-            Video video = videoService.saveVideo(title, description, videoFile, loginUser.getUserId());
+            Video video = videoService.saveVideo(title, description, videoFile, coverFile, loginUser.getUserId());
             return Result.success(video);
         } catch (IllegalArgumentException e) {
             return Result.error(e.getMessage());
@@ -192,6 +193,72 @@ public class VideoController {
             return "video/x-matroska";
         } else {
             return "application/octet-stream";
+        }
+    }
+
+    /**
+     * 更新视频封面
+     */
+    @PostMapping("/{id}/cover")
+    public Result<String> updateVideoCover(
+            @PathVariable Integer id,
+            @RequestParam("coverFile") MultipartFile coverFile,
+            HttpSession session) {
+        // 获取当前登录用户
+        User loginUser = (User) session.getAttribute("loginUser");
+        if (loginUser == null) {
+            return Result.error("请先登录");
+        }
+        
+        try {
+            boolean success = videoService.updateVideoCover(id, coverFile, loginUser.getUserId());
+            if (success) {
+                return Result.success("封面更新成功");
+            } else {
+                return Result.error("封面更新失败，视频不存在或不属于当前用户");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Result.error("封面更新失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 获取视频封面图片
+     */
+    @GetMapping("/cover/{filename:.+}")
+    public ResponseEntity<Resource> getCoverImage(@PathVariable String filename) {
+        try {
+            // 获取封面上传路径
+            String coverUploadPath = videoService.getCoverUploadPath();
+            
+            // 构建封面文件的完整路径
+            Path coverPath = Paths.get(coverUploadPath).resolve(filename).normalize();
+            Resource resource = new UrlResource(coverPath.toUri());
+            
+            // 检查资源是否存在
+            if (!resource.exists()) {
+                return ResponseEntity.notFound().build();
+            }
+            
+            // 确定内容类型
+            String contentType = "image/jpeg"; // 默认JPEG
+            if (filename.endsWith(".png")) {
+                contentType = "image/png";
+            } else if (filename.endsWith(".gif")) {
+                contentType = "image/gif";
+            } else if (filename.endsWith(".webp")) {
+                contentType = "image/webp";
+            }
+            
+            // 返回图片资源
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType(contentType))
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + resource.getFilename() + "\"")
+                    .body(resource);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().build();
         }
     }
 } 

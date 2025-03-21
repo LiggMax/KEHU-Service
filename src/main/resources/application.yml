@@ -34,6 +34,10 @@ video:
   upload:
     # 视频上传存储路径，使用绝对路径
     path: C:\Users\Administrator\Downloads\videos\
+cover:
+  upload:
+    # 封面图片上传存储路径，使用绝对路径
+    path: C:\Users\Administrator\Downloads\covers\
 mybatis:
   configuration:
     map-underscore-to-camel-case: true
