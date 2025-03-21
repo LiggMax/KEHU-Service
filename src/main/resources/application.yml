@@ -1,6 +1,39 @@
 spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/service?serverTimezone=GMT%2B8&useUnicode=true&characterEncoding=utf-8
+    url: jdbc:mysql://localhost:3306/spring?serverTimezone=GMT%2B8&useUnicode=true&characterEncoding=utf-8
     username: root
     password: 200309
+  session:
+    # 会话存储类型
+    store-type: jdbc
+    # 会话超时时间，单位秒
+    timeout: 1800
+    jdbc:
+      # 初始化schema
+      initialize-schema: always
+      # 以周为单位清理过期会话
+      cleanup-cron: "0 0/30 * * * ?"
+  servlet:
+    multipart:
+      # 单个文件大小限制
+      max-file-size: 1000MB
+      # 请求总大小限制
+      max-request-size: 1000MB
+      # 超过该阈值时文件将被写入到磁盘
+      file-size-threshold: 2MB
+server:
+  servlet:
+    # 设置cookie的名称
+    session:
+      cookie:
+        name: KEHU_SESSION
+
+# 自定义配置
+video:
+  upload:
+    # 视频上传存储路径，使用绝对路径
+    path: C:\Users\Administrator\Downloads\videos\
+mybatis:
+  configuration:
+    map-underscore-to-camel-case: true

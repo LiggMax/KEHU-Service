@@ -13,17 +13,17 @@ public class UserServiceImpl implements UserService {
     private UserMapper userMapper;
 
     @Override
-    public String Login(String username, String password) {
-        User user = userMapper.getUser(username,password);
-        if (user == null) {
-            return "用户名或密码错误";
-        }
-        return null;
+    public User Login(String username, String password) {
+        return userMapper.getUser(username, password); // 直接返回用户对象，如果未找到则为null
     }
 
     @Override
-    public String register(User user) {
-        userMapper.register(user);
+    public String register(String username, String password) {
+        if (userMapper.getUserByUsername(username) != null) {
+            return "用户名已存在";
+        }
+        userMapper.register(username, password);
         return null;
     }
+
 }
