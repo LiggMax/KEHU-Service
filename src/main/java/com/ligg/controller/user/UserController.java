@@ -32,7 +32,7 @@ public class UserController {
     /**
      * 上传视频
      */
-    @PostMapping("/upload")
+    @PostMapping("/video/upload")
     public Result<Video> uploadVideo(
             @RequestParam("title") String title,
             @RequestParam("description") String description,
@@ -60,7 +60,7 @@ public class UserController {
     /**
      * 获取当前用户的视频列表
      */
-    @GetMapping("/list")
+    @GetMapping("/video/list")
     public Result<List<Video>> getUserVideos(HttpSession session) {
         // 获取当前登录用户
         User loginUser = (User) session.getAttribute("loginUser");
@@ -71,6 +71,18 @@ public class UserController {
         // 调用服务层获取视频列表
         List<Video> videos = videoService.getUserVideos(loginUser.getUserId());
         return Result.success(videos);
+    }
+
+    /**
+     * 获取当前登录用户信息
+     */
+    @GetMapping("/current-user")
+    public Result<User> getCurrentUser(HttpSession session) {
+        User loginUser = (User) session.getAttribute("loginUser");
+        if (loginUser != null) {
+            return Result.success(loginUser);
+        }
+        return Result.error("未登录");
     }
 
 }

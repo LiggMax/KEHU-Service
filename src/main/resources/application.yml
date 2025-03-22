@@ -33,11 +33,11 @@ server:
 video:
   upload:
     # 视频上传存储路径，使用绝对路径
-    path: C:\Users\Administrator\Downloads\videos\
+    path: C:\Users\Administrator\Downloads\KH\videos\
 cover:
   upload:
     # 封面图片上传存储路径，使用绝对路径
-    path: C:\Users\Administrator\Downloads\covers\
+    path: C:\Users\Administrator\Downloads\KH\covers\
 mybatis:
   configuration:
     map-underscore-to-camel-case: true

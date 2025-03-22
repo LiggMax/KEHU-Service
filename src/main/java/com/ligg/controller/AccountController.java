@@ -45,16 +45,6 @@ public class AccountController {
         return Result.success();
     }
 
-    /**
-     * 获取当前登录用户信息
-     */
-    @GetMapping("/current-user")
-    public Result<User> getCurrentUser(HttpSession session) {
-        User loginUser = (User) session.getAttribute("loginUser");
-        if (loginUser != null) {
-            return Result.success(loginUser);
-        }
-        return Result.error("未登录");
-    }
+
 
 }
