@@ -18,7 +18,7 @@ public class WebConfig implements WebMvcConfigurer {
      */
     @Override
     public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/**")// 拦截所有请求
+        registry.addMapping("/user/**")// 拦截所有请求
                 .allowedOrigins("http://localhost:5173") // 前端开发服务器地址
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
@@ -34,13 +34,6 @@ public class WebConfig implements WebMvcConfigurer {
         // 登录拦截器
         registry.addInterceptor(loginInterceptor)
                 // 拦截所有请求
-                .addPathPatterns("/**")
-                // 排除不需要拦截的路径
-                .excludePathPatterns(
-                        "/login",
-                        "/register",
-                        "/logout",
-                        "/current-user"
-                );
+                .addPathPatterns("/user/**");
     }
 } 
