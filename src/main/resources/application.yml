@@ -13,7 +13,7 @@ spring:
       # 初始化schema
       initialize-schema: always
       # 以周为单位清理过期会话
-      cleanup-cron: "0 0/30 * * * ?"
+      cleanup-cron: "0 0/30 * * * ?" # 每30分钟清理一次
   servlet:
     multipart:
       # 单个文件大小限制
@@ -32,12 +32,16 @@ server:
 # 自定义配置
 video:
   upload:
-    # 视频上传存储路径，使用绝对路径
-    path: C:\Users\Administrator\Downloads\KH\videos\
+    # 视频上传存储路径，
+    path: ./springboot/videos/video
 cover:
   upload:
-    # 封面图片上传存储路径，使用绝对路径
-    path: C:\Users\Administrator\Downloads\KH\covers\
+    # 封面图片上传存储路径，
+    path: ./springboot/videos/img
+avatar:
+  upload:
+    # 头像上传存储路径，
+    path: ./springboot/videos/avatar
 mybatis:
   configuration:
     map-underscore-to-camel-case: true

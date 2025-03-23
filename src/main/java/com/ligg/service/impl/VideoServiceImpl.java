@@ -17,6 +17,17 @@ import java.nio.file.Paths;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.stream.Collectors;
+import com.ligg.pojo.User;
+import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class VideoServiceImpl implements VideoService {
@@ -40,6 +51,12 @@ public class VideoServiceImpl implements VideoService {
     
     @Override
     public Video saveVideo(String title, String description, MultipartFile videoFile, MultipartFile coverFile, Integer userId) {
+        // 调用带分类的方法，传入null作为分类
+        return saveVideo(title, description, null, videoFile, coverFile, userId);
+    }
+    
+    @Override
+    public Video saveVideo(String title, String description, String category, MultipartFile videoFile, MultipartFile coverFile, Integer userId) {
         // 检查视频文件是否为空
         if (videoFile == null || videoFile.isEmpty()) {
             throw new IllegalArgumentException("视频文件不能为空");
@@ -102,6 +119,7 @@ public class VideoServiceImpl implements VideoService {
             Video video = new Video();
             video.setTitle(title);
             video.setDescription(description);
+            video.setCategory(category); // 设置分类
             video.setFilePath("/api/video/stream/" + newVideoFilename);
             video.setCoverUrl("default_cover.jpg"); // 为了兼容性保留
             video.setVideoImg(videoImgPath);
@@ -112,7 +130,7 @@ public class VideoServiceImpl implements VideoService {
             video.setUpdateTime(now);
             
             // 打印关键信息
-            System.out.println("保存视频: 标题=" + title + ", 用户ID=" + userId + ", 视频路径=" + filePath + ", 封面路径=" + videoImgPath);
+            System.out.println("保存视频: 标题=" + title + ", 分类=" + category + ", 用户ID=" + userId + ", 视频路径=" + filePath + ", 封面路径=" + videoImgPath);
             
             // 保存到数据库
             videoMapper.saveVideo(video);
@@ -139,28 +157,51 @@ public class VideoServiceImpl implements VideoService {
     }
     
     @Override
-    public boolean deleteVideo(Integer id, Integer userId) {
+    public Map<String, Object> deleteVideo(Integer id, Integer userId) {
+        Map<String, Object> result = new HashMap<>();
+        result.put("success", false);
+        result.put("dbDeleted", false);
+        result.put("videoFileDeleted", false);
+        result.put("coverFileDeleted", false);
+        
         // 获取视频信息
         Video video = videoMapper.getVideoById(id);
         
         // 检查视频是否存在且属于当前用户
         if (video == null || !video.getUserId().equals(userId)) {
-            return false;
+            System.out.println("删除视频失败：视频不存在或不属于当前用户, videoId=" + id + ", userId=" + userId);
+            result.put("errorMsg", "视频不存在或不属于当前用户");
+            return result;
         }
         
         // 删除数据库记录
-        int result = videoMapper.deleteVideo(id, userId);
+        int dbResult = videoMapper.deleteVideo(id, userId);
         
-        // 如果删除成功，同时删除文件系统中的视频文件和封面文件
-        if (result > 0) {
+        // 如果删除数据库记录成功，同时删除文件系统中的视频文件和封面文件
+        if (dbResult > 0) {
+            result.put("dbDeleted", true);
+            
             try {
+                System.out.println("开始删除视频文件: videoId=" + id);
+                boolean videoDeleted = false;
+                boolean coverDeleted = false;
+                
                 // 删除视频文件
                 if (video.getFilePath() != null && video.getFilePath().startsWith("/api/video/stream/")) {
                     String filename = video.getFilePath().substring("/api/video/stream/".length());
                     Path videoPath = Paths.get(uploadPath, filename);
                     if (Files.exists(videoPath)) {
                         Files.delete(videoPath);
+                        videoDeleted = true;
+                        System.out.println("成功删除视频文件: " + videoPath);
+                    } else {
+                        System.out.println("视频文件不存在: " + videoPath);
+                        // 如果文件不存在，也算是删除成功
+                        videoDeleted = true;
                     }
+                } else {
+                    // 如果没有视频路径，视为删除成功
+                    videoDeleted = true;
                 }
                 
                 // 删除封面文件
@@ -169,18 +210,33 @@ public class VideoServiceImpl implements VideoService {
                     Path coverPath = Paths.get(coverUploadPath, coverFilename);
                     if (Files.exists(coverPath)) {
                         Files.delete(coverPath);
+                        coverDeleted = true;
+                        System.out.println("成功删除封面文件: " + coverPath);
+                    } else {
+                        System.out.println("封面文件不存在: " + coverPath);
+                        // 如果文件不存在，也算是删除成功
+                        coverDeleted = true;
                     }
+                } else {
+                    // 如果没有封面路径，视为删除成功
+                    coverDeleted = true;
                 }
                 
-                return true;
+                result.put("videoFileDeleted", videoDeleted);
+                result.put("coverFileDeleted", coverDeleted);
+                result.put("success", videoDeleted && coverDeleted);
+                
             } catch (IOException e) {
-                // 记录日志但不影响返回结果
+                // 文件删除失败
+                System.err.println("删除视频文件出错: " + e.getMessage());
                 e.printStackTrace();
-                return true;
+                result.put("errorMsg", "物理文件删除失败: " + e.getMessage());
             }
+        } else {
+            result.put("errorMsg", "数据库记录删除失败");
         }
         
-        return false;
+        return result;
     }
     
     @Override
@@ -298,5 +354,196 @@ public class VideoServiceImpl implements VideoService {
         }
         
         return false;
+    }
+
+    @Override
+    public Map<String, Object> searchVideos(String keyword, Integer page, Integer size) {
+        Map<String, Object> result = new HashMap<>();
+        
+        if (keyword == null || keyword.trim().isEmpty()) {
+            result.put("list", new ArrayList<>());
+            result.put("total", 0);
+            result.put("page", 1);
+            result.put("size", 10);
+            return result;
+        }
+        
+        // 处理参数
+        int currentPage = (page == null || page < 1) ? 1 : page;
+        int pageSize = (size == null || size < 1) ? 10 : size;
+        int offset = (currentPage - 1) * pageSize;
+        
+        try {
+            // 获取分页数据
+            List<Video> videos = videoMapper.searchVideosPaged(keyword, offset, pageSize);
+            
+            // 获取总记录数
+            int total = videoMapper.countSearchResults(keyword);
+            
+            // 构建结果
+            result.put("list", videos);
+            result.put("total", total);
+            result.put("page", currentPage);
+            result.put("size", pageSize);
+            
+            return result;
+        } catch (Exception e) {
+            e.printStackTrace();
+            
+            // 发生异常时返回空结果
+            result.put("list", new ArrayList<>());
+            result.put("total", 0);
+            result.put("page", currentPage);
+            result.put("size", pageSize);
+            
+            return result;
+        }
+    }
+    
+    @Override
+    public List<String> getHotSearchKeywords() {
+        return videoMapper.getHotSearchKeywords();
+    }
+    
+    @Override
+    public List<String> getSearchSuggestions(String keyword) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return List.of();
+        }
+
+        try {
+            // 基于视频标题、描述和分类生成建议
+            List<Video> videos = videoMapper.searchVideos(keyword);
+            Set<String> suggestions = new HashSet<>();
+            
+            // 从视频标题和分类中提取建议
+            for (Video video : videos) {
+                if (video.getTitle() != null) {
+                    suggestions.add(video.getTitle());
+                }
+                if (video.getCategory() != null && !video.getCategory().isEmpty()) {
+                    suggestions.add(video.getCategory());
+                }
+            }
+            
+            return new ArrayList<>(suggestions);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return List.of();
+        }
+    }
+    
+    @Override
+    public boolean incrementViewCount(Integer videoId) {
+        if (videoId == null) {
+            return false;
+        }
+        
+        try {
+            // 调用Mapper层增加观看次数
+            videoMapper.incrementViewCount(videoId);
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+    
+    @Override
+    public List<String> getAllCategories() {
+        try {
+            return videoMapper.getAllCategories();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ArrayList<>();
+        }
+    }
+    
+    @Override
+    public Map<String, Object> getCategoriesWithCount() {
+        try {
+            // 获取带计数的分类列表
+            List<Map<String, Object>> categoriesWithCount = videoMapper.getCategoriesWithCount();
+            
+            // 构建结果
+            Map<String, Object> result = new HashMap<>();
+            List<String> categories = new ArrayList<>();
+            Map<String, Integer> counts = new HashMap<>();
+            
+            // 整理数据格式
+            for (Map<String, Object> item : categoriesWithCount) {
+                String category = (String) item.get("key");
+                Integer count = ((Number) item.get("value")).intValue();
+                
+                categories.add(category);
+                counts.put(category, count);
+            }
+            
+            result.put("categories", categories);
+            result.put("counts", counts);
+            
+            return result;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Map.of("categories", List.of(), "counts", Map.of());
+        }
+    }
+    
+    @Override
+    public List<Video> getVideosByCategory(String category) {
+        if (category == null || category.isEmpty()) {
+            return new ArrayList<>();
+        }
+        
+        try {
+            return videoMapper.getVideosByCategory(category);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ArrayList<>();
+        }
+    }
+    
+    @Override
+    public Map<String, Object> getVideosByCategoryPaged(String category, Integer page, Integer size) {
+        Map<String, Object> result = new HashMap<>();
+        
+        if (category == null || category.trim().isEmpty()) {
+            result.put("list", new ArrayList<>());
+            result.put("total", 0);
+            result.put("page", 1);
+            result.put("size", 10);
+            return result;
+        }
+        
+        // 处理参数
+        int currentPage = (page == null || page < 1) ? 1 : page;
+        int pageSize = (size == null || size < 1) ? 10 : size;
+        int offset = (currentPage - 1) * pageSize;
+        
+        try {
+            // 获取分页数据
+            List<Video> videos = videoMapper.getVideosByCategoryPaged(category, offset, pageSize);
+            
+            // 获取总记录数
+            int total = videoMapper.countVideosByCategory(category);
+            
+            // 构建结果
+            result.put("list", videos);
+            result.put("total", total);
+            result.put("page", currentPage);
+            result.put("size", pageSize);
+            
+            return result;
+        } catch (Exception e) {
+            e.printStackTrace();
+            
+            // 发生异常时返回空结果
+            result.put("list", new ArrayList<>());
+            result.put("total", 0);
+            result.put("page", currentPage);
+            result.put("size", pageSize);
+            
+            return result;
+        }
     }
 } 

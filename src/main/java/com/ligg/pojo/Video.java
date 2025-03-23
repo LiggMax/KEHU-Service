@@ -19,6 +19,7 @@ public class Video implements Serializable {
     private String filePath;    // 视频文件路径
     private String coverUrl;    // 视频封面URL(过时的字段，保持兼容)
     private String videoImg;    // 视频封面图片路径(新字段)
+    private String category;    // 视频分类
     private Integer userId;     // 上传用户ID
     private Integer viewCount;  // 观看次数
     private Date createTime;    // 创建时间
