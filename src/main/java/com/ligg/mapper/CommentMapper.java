@@ -45,4 +45,38 @@ public interface CommentMapper {
      */
     @Update("UPDATE comments SET likes = likes + 1 WHERE id = #{id}")
     void incrementLikes(Integer id);
+
+    /**
+     * 获取所有评论
+     */
+    @Select("SELECT c.*, u.username as username, v.title as videoTitle FROM comments c " +
+            "LEFT JOIN users u ON c.user_id = u.user_id " +
+            "LEFT JOIN videos v ON c.video_id = v.id " +
+            "ORDER BY c.create_time DESC")
+    List<Comment> getAllComments();
+
+    /**
+     * 根据内容模糊搜索评论
+     */
+    @Select("SELECT c.*, u.username as username, v.title as videoTitle FROM comments c " +
+            "LEFT JOIN users u ON c.user_id = u.user_id " +
+            "LEFT JOIN videos v ON c.video_id = v.id " +
+            "WHERE c.content LIKE CONCAT('%', #{content}, '%') " +
+            "ORDER BY c.create_time DESC")
+    List<Comment> searchCommentsByContent(String content);
+
+    /**
+     * 根据ID获取评论信息
+     */
+    @Select("SELECT c.*, u.username as username, v.title as videoTitle FROM comments c " +
+            "LEFT JOIN users u ON c.user_id = u.user_id " +
+            "LEFT JOIN videos v ON c.video_id = v.id " +
+            "WHERE c.id = #{id}")
+    Comment getCommentById(Integer id);
+    
+    /**
+     * 根据ID删除评论
+     */
+    @Delete("DELETE FROM comments WHERE id = #{id}")
+    int deleteById(Integer id);
 } 

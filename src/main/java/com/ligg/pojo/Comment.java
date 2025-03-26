@@ -42,4 +42,6 @@ public class Comment {
      * 评论用户名(非数据库字段)
      */
     private String username;
+
+    private String videoTitle;
 } 

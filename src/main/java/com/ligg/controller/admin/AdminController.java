@@ -2,7 +2,9 @@ package com.ligg.controller.admin;
 
 import com.ligg.mapper.UserMapper;
 import com.ligg.mapper.VideoMapper;
+import com.ligg.mapper.CommentMapper;
 import com.ligg.pojo.Admin;
+import com.ligg.pojo.Comment;
 import com.ligg.pojo.Result;
 import com.ligg.pojo.User;
 import com.ligg.pojo.Video;
@@ -29,6 +31,9 @@ public class AdminController {
 
     @Autowired
     private VideoMapper videoMapper;
+    
+    @Autowired
+    private CommentMapper commentMapper;
 
     @PostMapping("/adminLogin")
     public Result adminLogin(@NonNull @RequestBody Map<String,Object> loginMap, HttpSession session) {
@@ -221,6 +226,7 @@ public class AdminController {
             if (rows > 0) {
                 return Result.success("删除成功");
             } else {
+                
                 return Result.error("删除失败");
             }
         } catch (Exception e) {
@@ -228,5 +234,85 @@ public class AdminController {
             return Result.error("删除视频失败: " + e.getMessage());
         }
     }
-    
+
+    /**
+     * 获取评论列表
+     */
+    @GetMapping("/commentList")
+    public Result getCommentList(@RequestParam(required = false) String content, HttpSession session) {
+        // 检查管理员是否登录
+        Admin loginAdmin = (Admin) session.getAttribute("loginAdmin");
+        if (loginAdmin == null) {
+            return Result.error("未登录");
+        }
+
+        try {
+            List<Comment> comments;
+            if (content != null && !content.trim().isEmpty()) {
+                // 如果提供了内容，进行模糊搜索
+                comments = commentMapper.searchCommentsByContent(content.trim());
+            } else {
+                // 否则获取所有评论
+                comments = commentMapper.getAllComments();
+            }
+            return Result.success(comments);
+        } catch (Exception e) {
+            log.error("获取评论列表失败", e);
+            return Result.error("获取评论列表失败");
+        }
+    }
+
+    /**
+     * 根据ID获取评论信息
+     */
+    @GetMapping("/getCommentById")
+    public Result<Comment> getCommentById(@RequestParam Integer commentId, HttpSession session) {
+        // 检查管理员是否登录
+        if (session.getAttribute("loginAdmin") == null) {
+            return Result.error("未登录");
+        }
+        
+        try {
+            Comment comment = commentMapper.getCommentById(commentId);
+            if (comment != null) {
+                return Result.success(comment);
+            } else {
+                return Result.error("评论不存在");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Result.error("获取评论信息失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 删除评论
+     */
+    @DeleteMapping("/comments/{id}")
+    public Result deleteComment(@PathVariable Integer id, HttpSession session) {
+        // 检查管理员是否登录
+        Admin loginAdmin = (Admin) session.getAttribute("loginAdmin");
+        if (loginAdmin == null) {
+            return Result.error("未登录");
+        }
+
+        try {
+            // 先获取评论信息，检查评论是否存在
+            Comment comment = commentMapper.getCommentById(id);
+            if (comment == null) {
+                return Result.error("评论不存在");
+            }
+
+            // 删除评论
+            int rows = commentMapper.deleteById(id);
+            if (rows > 0) {
+                return Result.success("删除成功");
+            } else {
+                return Result.error("删除失败");
+            }
+        } catch (Exception e) {
+            log.error("删除评论失败", e);
+            return Result.error("删除评论失败: " + e.getMessage());
+        }
+    }
 }
