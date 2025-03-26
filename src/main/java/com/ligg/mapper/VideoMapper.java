@@ -26,7 +26,7 @@ public interface VideoMapper {
     /**
      * 获取所有视频列表
      */
-    @Select("SELECT * FROM videos ORDER BY create_time DESC")
+    @Select("SELECT * FROM videos")
     List<Video> getAllVideos();
     
     /**
@@ -52,6 +52,12 @@ public interface VideoMapper {
      */
     @Update("UPDATE videos SET view_count = view_count + 1 WHERE id = #{id}")
     void incrementViewCount(Integer id);
+    
+    /**
+     * 根据标题模糊搜索视频
+     */
+    @Select("SELECT * FROM videos WHERE title LIKE CONCAT('%', #{title}, '%')")
+    List<Video> searchVideosByTitle(String title);
     
     /**
      * 搜索视频（模糊查询）

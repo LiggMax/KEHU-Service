@@ -1,9 +1,11 @@
 package com.ligg.controller.admin;
 
 import com.ligg.mapper.UserMapper;
+import com.ligg.mapper.VideoMapper;
 import com.ligg.pojo.Admin;
 import com.ligg.pojo.Result;
 import com.ligg.pojo.User;
+import com.ligg.pojo.Video;
 import com.ligg.service.admin.AdminService;
 import jakarta.servlet.http.HttpSession;
 import lombok.NonNull;
@@ -24,6 +26,9 @@ public class AdminController {
 
     @Autowired
     private UserMapper userMapper;
+
+    @Autowired
+    private VideoMapper videoMapper;
 
     @PostMapping("/adminLogin")
     public Result adminLogin(@NonNull @RequestBody Map<String,Object> loginMap, HttpSession session) {
@@ -140,6 +145,56 @@ public class AdminController {
         } catch (Exception e) {
             e.printStackTrace();
             return Result.error("获取用户信息失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 获取视频列表
+     */
+    @GetMapping("/videoList")
+    public Result getVideoList(@RequestParam(required = false) String title, HttpSession session) {
+        // 检查管理员是否登录
+        Admin loginAdmin = (Admin) session.getAttribute("loginAdmin");
+        if (loginAdmin == null) {
+            return Result.error("未登录");
+        }
+
+        try {
+            List<Video> videos;
+            if (title != null && !title.trim().isEmpty()) {
+                // 如果提供了标题，进行模糊搜索
+                videos = videoMapper.searchVideosByTitle(title.trim());
+            } else {
+                // 否则获取所有视频
+                videos = videoMapper.getAllVideos();
+            }
+            return Result.success(videos);
+        } catch (Exception e) {
+            log.error("获取视频列表失败", e);
+            return Result.error("获取视频列表失败");
+        }
+    }
+
+    /**
+     * 根据ID获取视频信息
+     */
+    @GetMapping("/getVideoById")
+    public Result<Video> getVideoById(@RequestParam Integer videoId, HttpSession session) {
+        // 检查管理员是否登录
+        if (session.getAttribute("loginAdmin") == null) {
+            return Result.error("未登录");
+        }
+        
+        try {
+            Video video = videoMapper.getVideoById(videoId);
+            if (video != null) {
+                return Result.success(video);
+            } else {
+                return Result.error("视频不存在");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Result.error("获取视频信息失败: " + e.getMessage());
         }
     }
 }
