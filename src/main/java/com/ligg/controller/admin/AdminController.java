@@ -7,10 +7,7 @@ import jakarta.servlet.http.HttpSession;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
@@ -32,6 +29,23 @@ public class AdminController {
             return Result.error("用户名或密码错误");
         }
         session.setAttribute("loginAdmin",adminLogin);
+        return Result.success(adminLogin);
+    }
+
+    @GetMapping("/adminInfo")
+    public Result getAdminInfo(HttpSession session) {
+        Admin loginAdmin = (Admin) session.getAttribute("loginAdmin");
+        if (loginAdmin == null) {
+            return Result.error("未登录");
+        }
+        // 出于安全考虑，清除密码信息
+        loginAdmin.setPassword(null);
+        return Result.success(loginAdmin);
+    }
+
+    @DeleteMapping("/logout")
+    public Result<?> logout(HttpSession session) {
+        session.removeAttribute("loginAdmin");
         return Result.success();
     }
 }
