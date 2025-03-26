@@ -13,7 +13,7 @@ spring:
       # 初始化schema
       initialize-schema: always
       # 以周为单位清理过期会话
-      cleanup-cron: "0 0/30 * * * ?" # 每30分钟清理一次
+      cleanup-cron: "0 0/30 * * * ?"
   servlet:
     multipart:
       # 单个文件大小限制
