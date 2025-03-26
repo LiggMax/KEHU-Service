@@ -197,4 +197,36 @@ public class AdminController {
             return Result.error("获取视频信息失败: " + e.getMessage());
         }
     }
+
+    /**
+     * 删除视频
+     */
+    @DeleteMapping("/videos/{id}")
+    public Result deleteVideo(@PathVariable Integer id, HttpSession session) {
+        // 检查管理员是否登录
+        Admin loginAdmin = (Admin) session.getAttribute("loginAdmin");
+        if (loginAdmin == null) {
+            return Result.error("未登录");
+        }
+
+        try {
+            // 先获取视频信息，检查视频是否存在
+            Video video = videoMapper.getVideoById(id);
+            if (video == null) {
+                return Result.error("视频不存在");
+            }
+
+            // 删除视频
+            int rows = videoMapper.deleteById(id);
+            if (rows > 0) {
+                return Result.success("删除成功");
+            } else {
+                return Result.error("删除失败");
+            }
+        } catch (Exception e) {
+            log.error("删除视频失败", e);
+            return Result.error("删除视频失败: " + e.getMessage());
+        }
+    }
+    
 }

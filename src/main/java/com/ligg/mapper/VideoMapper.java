@@ -160,4 +160,10 @@ public interface VideoMapper {
     @Insert("INSERT INTO search_history (keyword, user_id, search_time) " +
             "VALUES (#{keyword}, #{userId}, NOW())")
     void saveSearchHistory(String keyword, Integer userId);
+
+    /**
+     * 根据ID删除视频
+     */
+    @Delete("DELETE FROM videos WHERE id = #{id}")
+    int deleteById(Integer id);
 } 
