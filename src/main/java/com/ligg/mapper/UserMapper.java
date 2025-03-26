@@ -6,6 +6,8 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 
+import java.util.List;
+
 @Mapper
 public interface UserMapper {
     @Select("select * from users where username=#{username} and password=#{password}")
@@ -38,4 +40,10 @@ public interface UserMapper {
      */
     @Update("update users set nickname=#{nickname}, avatar=#{avatar} where user_id=#{userId}")
     int updateUserInfo(User user);
+
+    /**
+     * 获取所有用户列表
+     */
+    @Select("select * from users")
+    List<User> getAllUsers();
 }
