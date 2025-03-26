@@ -56,7 +56,7 @@ public class AdminController {
     }
 
     @GetMapping("/userList")
-    public Result getUserList(HttpSession session) {
+    public Result getUserList(@RequestParam(required = false) String username, HttpSession session) {
         // 检查管理员是否登录
         Admin loginAdmin = (Admin) session.getAttribute("loginAdmin");
         if (loginAdmin == null) {
@@ -64,7 +64,14 @@ public class AdminController {
         }
 
         try {
-            List<User> users = userMapper.getAllUsers();
+            List<User> users;
+            if (username != null && !username.trim().isEmpty()) {
+                // 如果提供了用户名，进行模糊搜索
+                users = userMapper.searchUsersByUsername(username.trim());
+            } else {
+                // 否则获取所有用户
+                users = userMapper.getAllUsers();
+            }
             // 出于安全考虑，清除所有用户的密码信息
             users.forEach(user -> user.setPassword(null));
             return Result.success(users);

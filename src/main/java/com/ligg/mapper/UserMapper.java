@@ -45,4 +45,10 @@ public interface UserMapper {
      */
     @Select("select * from users")
     List<User> getAllUsers();
+
+    /**
+     * 根据用户名模糊搜索用户
+     */
+    @Select("SELECT * FROM users WHERE username LIKE CONCAT('%', #{username}, '%')")
+    List<User> searchUsersByUsername(String username);
 }
