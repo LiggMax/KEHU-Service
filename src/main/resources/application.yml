@@ -33,15 +33,15 @@ server:
 video:
   upload:
     # 视频上传存储路径，
-    path: ./springboot/videos/video
+    path: C:\videos\video
 cover:
   upload:
     # 封面图片上传存储路径，
-    path: ./springboot/videos/img
+    path: C:\videos\img
 avatar:
   upload:
     # 头像上传存储路径，
-    path: ./springboot/videos/avatar
+    path: C:\videos\avatar
 mybatis:
   configuration:
     map-underscore-to-camel-case: true
