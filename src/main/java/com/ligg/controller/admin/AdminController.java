@@ -73,4 +73,66 @@ public class AdminController {
             return Result.error("获取用户列表失败");
         }
     }
+
+    /**
+     * 更新用户信息
+     */
+    @PostMapping("/updateUser")
+    public Result<String> updateUser(@RequestBody User user, HttpSession session) {
+        // 检查管理员是否登录
+        if (session.getAttribute("loginAdmin") == null) {
+            return Result.error("未登录");
+        }
+        
+        try {
+            if (user.getUserId() == null) {
+                return Result.error("用户ID不能为空");
+            }
+            
+            // 检查用户是否存在
+            User existingUser = userMapper.getUserById(user.getUserId());
+            if (existingUser == null) {
+                return Result.error("用户不存在");
+            }
+            
+            // 设置不允许修改的字段
+            user.setPassword(null); // 不通过这个接口修改密码
+            
+            // 更新用户信息
+            int result = userMapper.update(user);
+            if (result > 0) {
+                return Result.success("更新成功");
+            } else {
+                return Result.error("更新失败");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Result.error("更新用户信息失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 根据ID获取用户信息
+     */
+    @GetMapping("/getUserById")
+    public Result<User> getUserById(@RequestParam Integer userId, HttpSession session) {
+        // 检查管理员是否登录
+        if (session.getAttribute("loginAdmin") == null) {
+            return Result.error("未登录");
+        }
+        
+        try {
+            User user = userMapper.getUserById(userId);
+            if (user != null) {
+                // 出于安全考虑，不返回密码
+                user.setPassword(null);
+                return Result.success(user);
+            } else {
+                return Result.error("用户不存在");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Result.error("获取用户信息失败: " + e.getMessage());
+        }
+    }
 }

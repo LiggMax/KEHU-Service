@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.Date;
 
 /**
  * 用户实体类
@@ -41,4 +42,14 @@ public class User implements Serializable {
      * 头像URL
      */
     private String avatar;
+
+    /**
+     * 邮箱
+     */
+    private String email;
+
+    /**
+     * 注册时间
+     */
+    private Date registerTime;
 }

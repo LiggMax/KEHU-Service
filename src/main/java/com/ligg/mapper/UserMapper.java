@@ -38,8 +38,7 @@ public interface UserMapper {
     /**
      * 更新用户信息
      */
-    @Update("update users set nickname=#{nickname}, avatar=#{avatar} where user_id=#{userId}")
-    int updateUserInfo(User user);
+    int update(User user);
 
     /**
      * 获取所有用户列表

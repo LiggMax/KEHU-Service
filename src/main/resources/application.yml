@@ -43,5 +43,6 @@ avatar:
     # 头像上传存储路径，
     path: C:\videos\avatar
 mybatis:
+  mapper-locations: classpath:mapper/*.xml
   configuration:
     map-underscore-to-camel-case: true
