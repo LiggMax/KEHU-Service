@@ -54,7 +54,6 @@ public class AdminController {
         if (loginAdmin == null) {
             return Result.error("未登录");
         }
-        // 出于安全考虑，清除密码信息
         loginAdmin.setPassword(null);
         return Result.success(loginAdmin);
     }
@@ -82,7 +81,6 @@ public class AdminController {
                 // 否则获取所有用户
                 users = userMapper.getAllUsers();
             }
-            // 出于安全考虑，清除所有用户的密码信息
             users.forEach(user -> user.setPassword(null));
             return Result.success(users);
         } catch (Exception e) {
@@ -313,6 +311,69 @@ public class AdminController {
         } catch (Exception e) {
             log.error("删除评论失败", e);
             return Result.error("删除评论失败: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * 获取视频播放量排行榜
+     * @param limit 返回的记录数量，默认为10
+     * @return 按播放量排序的视频列表
+     */
+    @GetMapping("/videoRanking")
+    public Result getVideoRanking(@RequestParam(required = false, defaultValue = "10") Integer limit, HttpSession session) {
+        // 检查管理员是否登录
+        Admin loginAdmin = (Admin) session.getAttribute("loginAdmin");
+        if (loginAdmin == null) {
+            return Result.error("未登录");
+        }
+
+        try {
+            // 限制最大返回数量，防止请求过大的数据
+            if (limit > 100) {
+                limit = 100;
+            }
+            
+            List<Map<String, Object>> videoRanking = videoMapper.getVideoRankingByViews(limit);
+            return Result.success(videoRanking);
+        } catch (Exception e) {
+            log.error("获取视频排行榜失败", e);
+            return Result.error("获取视频排行榜失败: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * 获取指定时间范围内的视频播放量排行榜
+     * @param days 最近几天，默认为7天
+     * @param limit 返回的记录数量，默认为10
+     * @return 按播放量排序的视频列表
+     */
+    @GetMapping("/videoRankingByDays")
+    public Result getVideoRankingByDays(
+            @RequestParam(required = false, defaultValue = "7") Integer days,
+            @RequestParam(required = false, defaultValue = "10") Integer limit,
+            HttpSession session) {
+        // 检查管理员是否登录
+        Admin loginAdmin = (Admin) session.getAttribute("loginAdmin");
+        if (loginAdmin == null) {
+            return Result.error("未登录");
+        }
+
+        try {
+            // 参数验证
+            if (days <= 0) {
+                return Result.error("天数必须大于0");
+            }
+            
+            // 限制最大返回数量，防止请求过大的数据
+            if (limit > 100) {
+                limit = 100;
+            }
+            
+            List<Map<String, Object>> videoRanking = videoMapper.getVideoRankingByViewsWithinDays(days, limit);
+            return Result.success(videoRanking);
+        } catch (Exception e) {
+            log.error("获取时间范围内的视频排行榜失败", e);
+            return Result.error("获取时间范围内的视频排行榜失败: " + e.getMessage());
         }
     }
 }

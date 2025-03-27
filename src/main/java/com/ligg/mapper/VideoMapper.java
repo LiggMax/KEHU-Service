@@ -166,4 +166,26 @@ public interface VideoMapper {
      */
     @Delete("DELETE FROM videos WHERE id = #{id}")
     int deleteById(Integer id);
+    
+    /**
+     * 获取视频播放量排行榜
+     * @param limit 返回的记录数量
+     * @return 按播放量排序的视频列表
+     */
+    @Select("SELECT v.*, u.username as uploaderName FROM videos v " +
+            "LEFT JOIN users u ON v.user_id = u.user_id " +
+            "ORDER BY v.view_count DESC LIMIT #{limit}")
+    List<Map<String, Object>> getVideoRankingByViews(int limit);
+    
+    /**
+     * 获取指定时间范围内的视频播放量排行榜
+     * @param days 最近几天，如7表示最近7天
+     * @param limit 返回的记录数量
+     * @return 按播放量排序的视频列表
+     */
+    @Select("SELECT v.*, u.username as uploaderName FROM videos v " +
+            "LEFT JOIN users u ON v.user_id = u.user_id " +
+            "WHERE v.create_time >= DATE_SUB(NOW(), INTERVAL #{days} DAY) " +
+            "ORDER BY v.view_count DESC LIMIT #{limit}")
+    List<Map<String, Object>> getVideoRankingByViewsWithinDays(int days, int limit);
 } 
